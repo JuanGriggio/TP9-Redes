@@ -3,6 +3,7 @@ import {
   DynamoDBDocumentClient,
   PutCommand
 } from "@aws-sdk/lib-dynamodb";
+import { randomUUID } from "crypto"
 
 const client = new DynamoDBClient({});
 const dynamo = DynamoDBDocumentClient.from(client);
@@ -14,19 +15,22 @@ export const handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
   };
+  
+  const uuid = randomUUID();
 
   try {
     let requestJSON = event;
+    const item = {
+            id: uuid,
+            name: requestJSON.name,
+        };
     await dynamo.send(
         new PutCommand({
         TableName: tableName,
-        Item: {
-            id: requestJSON.name,
-            name: requestJSON.name,
-        },
+        Item: item,
         })
     );
-    body = requestJSON;
+    body = item;
   } catch (err) {
     statusCode = 400;
     body = err.message;
