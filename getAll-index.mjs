@@ -24,12 +24,12 @@ export const handler = async (event, context) => {
     body = response.Items;
   } catch (err) {
     statusCode = 400;
-    body = err.message;
+    body = { "error": err.message };
   } 
   
   return {
     statusCode,
-    body: JSON.stringify(body),
+    "body": JSON.stringify(body),
     headers,
   };
 };

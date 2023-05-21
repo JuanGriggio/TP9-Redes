@@ -15,7 +15,6 @@ export const handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
   };
-  
   const uuid = randomUUID();
 
   try {
@@ -33,12 +32,12 @@ export const handler = async (event, context) => {
     body = item;
   } catch (err) {
     statusCode = 400;
-    body = err.message;
+    body = { "error": err.message };
   } 
   
   return {
     statusCode,
-    body,
+    "body": JSON.stringify(body),
     headers,
   };
 };
