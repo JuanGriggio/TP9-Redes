@@ -1,35 +1,22 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
-  DynamoDBDocumentClient,
-  ScanCommand
+	DynamoDBDocumentClient,
+	ScanCommand
 } from "@aws-sdk/lib-dynamodb";
+import { HTTP_STATUS, buildReponse, tableName } from "./shared.mjs";
 
 const client = new DynamoDBClient({});
 const dynamo = DynamoDBDocumentClient.from(client);
-const tableName = "movies";
 
 export const handler = async (event, context) => {
-  let body;
-  let statusCode = 200;
-  const headers = {
-    "Content-Type": "application/json",
-  };
-
-  try {
-    const response = await dynamo.send(
-      new ScanCommand({
-        TableName: tableName,
-      })
-    );
-    body = response.Items;
-  } catch (err) {
-    statusCode = 400;
-    body = { "error": err.message };
-  } 
-  
-  return {
-    statusCode,
-    "body": JSON.stringify(body),
-    headers,
-  };
+	try {
+		const response = await dynamo.send(
+			new ScanCommand({
+				TableName: tableName,
+			})
+		);
+		return buildReponse(response.Items, HTTP_STATUS.OK);
+	} catch (err) {
+		return buildReponse(err.message ?? 'Unknown database error', HTTP_STATUS.SERVER_ERROR);
+	}
 };
