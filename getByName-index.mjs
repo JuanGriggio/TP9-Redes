@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
 	DynamoDBDocumentClient,
-	GetCommand
+	ScanCommand
 } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({});
@@ -29,27 +29,26 @@ const isValidString = (maybeStr) => {
 }
 
 export const handler = async (event, context) => {
-	console.log(`PATH PARAMS: ${JSON.stringify(event.pathParameters)}`);
-	console.log(`NAME PARAM: ${event.pathParameters.name}`);
-	console.log(`NAME PARAM TYPE: ${typeof event.pathParameters.name}`);
 	// Parse input
 	if (!isValidString(event.pathParameters?.name))
 		return buildReponse('Invalid or missing path parameter: name', HTTP_STATUS.BAD_REQUEST);
 
 	try {
 		const response = await dynamo.send(
-			new GetCommand({
-				TableName: tableName,
-				Key: {
-					name: event.pathParameters.name,
-				},
-			})
+			new ScanCommand({
+                TableName: tableName,
+                FilterExpression: "#name = :nameValue",
+                ExpressionAttributeNames: {
+                    "#name": "name"
+                },
+                ExpressionAttributeValues: {
+                    ":nameValue": event.pathParameters.name
+                }
+            })
 		);
-		console.log(`RESPONSE: ${JSON.stringify(response)}`);
-		return response.Item ? buildReponse([response.Item], HTTP_STATUS.OK) : buildReponse([], HTTP_STATUS.NO_CONTENT);
+		return response.Items.length !== 0 ? buildReponse(response.Items, HTTP_STATUS.OK) : buildReponse([], HTTP_STATUS.NO_CONTENT);
 	} catch (err) {
 		console.log(`ERROR: ${JSON.stringify(err)}`);
 		return buildReponse('Internal server error', HTTP_STATUS.SERVER_ERROR);
 	}
 };
-
