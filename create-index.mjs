@@ -4,29 +4,49 @@ import {
 	PutCommand
 } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto"
-import { HTTP_STATUS, buildReponse, isValidString, tableName } from "./shared.mjs";
 
 const client = new DynamoDBClient({});
 const dynamo = DynamoDBDocumentClient.from(client);
 
+const tableName = 'movies';
+
+const buildReponse = (body, statusCode) => {
+    return {
+        statusCode: statusCode ?? HTTP_STATUS.OK,
+        body: JSON.stringify(body ?? {}),
+        headers: { "Content-Type": "application/json" }
+    }
+}
+
+const HTTP_STATUS = {
+    CREATED: 201,
+    BAD_REQUEST: 400,
+    SERVER_ERROR: 500,
+}
+
+const isValidString = (maybeStr) => {
+    return !(!maybeStr || typeof maybeStr !== 'string' || maybeStr.trim().length <= 0)
+}
+
 export const handler = async (event, context) => {
 	// Parse input
 	if (!isValidString(event.name))
-		return buildReponse('Invalid parameter: name', HTTP_STATUS.BAD_REQUEST);
+		return buildReponse('Invalid or missing parameter: name', HTTP_STATUS.BAD_REQUEST);
 	
 	// Try to get random uuid
 	let uuid;
 	try {
 		uuid = randomUUID();
 	} catch (err) {
-		return buildReponse('Failed to obtain id', HTTP_STATUS.SERVER_ERROR);
+		console.log(`ERROR: ${JSON.stringify(err)}`);
+		return buildReponse('Internal server error', HTTP_STATUS.SERVER_ERROR);
 	}
 
 	// Save to database
 	try {
 		const item = {
 			id: uuid,
-			name: event.name,
+			name: event.name.trim()
 		};
 		await dynamo.send(
 			new PutCommand({
@@ -36,6 +56,7 @@ export const handler = async (event, context) => {
 		);
 		return buildReponse(item, HTTP_STATUS.CREATED);
 	} catch (err) {
-		return buildReponse(err.message ?? 'Unknown database error', HTTP_STATUS.SERVER_ERROR);
+		console.log(`ERROR: ${JSON.stringify(err)}`);
+		return buildReponse('Internal server error', HTTP_STATUS.SERVER_ERROR);
 	}
 };
