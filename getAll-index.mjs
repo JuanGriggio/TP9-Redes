@@ -31,7 +31,7 @@ export const handler = async (event, context) => {
 			})
 		);
 
-		return response.Items ? buildReponse(response.Items, HTTP_STATUS.OK) : buildReponse([], HTTP_STATUS.NO_CONTENT);
+		return response.Items.length !== 0 ? buildReponse(response.Items, HTTP_STATUS.OK) : buildReponse([], HTTP_STATUS.NO_CONTENT);
 
 	} catch (err) {
 		console.log(`ERROR: ${JSON.stringify(err)}`);
