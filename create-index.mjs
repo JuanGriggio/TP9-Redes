@@ -44,10 +44,12 @@ export const handler = async (event, context) => {
 
 	// Save to database
 	try {
-		const item = {
-			id: uuid,
-			name: event.name.trim()
-		};
+		let item = Object.keys(event).reduce(function(obj, key) {
+		  obj[key] = event[key];
+		  return obj;
+		}, {});
+		item["id"] = uuid;
+		
 		await dynamo.send(
 			new PutCommand({
 				TableName: tableName,
